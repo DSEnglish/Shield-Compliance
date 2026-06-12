@@ -45,6 +45,7 @@ body{font-family:system-ui,sans-serif;background:#EBF0F7;color:#0D1F3C}
 .modal{background:#fff;border-radius:12px;padding:1.5rem;width:100%;max-width:500px;max-height:90vh;overflow-y:auto}
 .alert-e{background:#F8D7DA;color:#C0392B;padding:.6rem .8rem;border-radius:6px;font-size:12px;margin-bottom:.75rem}
 .alert-s{background:#D4EDDA;color:#1E7B4B;padding:.6rem .8rem;border-radius:6px;font-size:12px;margin-bottom:.75rem}
+.alert-i{background:#D1ECF1;color:#0C5460;padding:.6rem .8rem;border-radius:6px;font-size:12px;margin-bottom:.75rem}
 .tag{display:inline-block;background:#EBF0F7;border:1px solid #D0DCE8;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:600;margin:2px}
 .empty{text-align:center;padding:2.5rem 1rem;color:#6B7A8D}
 .divider{border:none;border-top:1px solid #D0DCE8;margin:.85rem 0}
@@ -70,9 +71,11 @@ async function api(path,opts={}){
   if(!res.ok)throw new Error(d.message||d.error_description||JSON.stringify(d));
   return d;
 }
+
 async function authCall(path,body){
   const res=await fetch(`${SU}/auth/v1/${path}`,{method:"POST",headers:{apikey:SK,"Content-Type":"application/json"},body:JSON.stringify(body)});
-  return res.json();
+  const d=await res.json();
+  return d;
 }
 
 const RULES={
@@ -87,7 +90,6 @@ const RULES={
 };
 
 function genId(p="SHD"){return `${p}-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2,5).toUpperCase()}`;}
-
 function Badge({s}){const m={active:"bg",cleared:"bg",complete:"bg",pending:"by",submitted:"bb",open:"by",low:"bgr",medium:"by",high:"br",expired:"br",flagged:"br","not_required":"bgr"};return <span className={`badge ${m[s]||"bgr"}`}>{s}</span>;}
 
 function Auth({onAuth}){
@@ -96,14 +98,23 @@ function Auth({onAuth}){
   const [pw,setPw]=useState("");
   const [busy,setBusy]=useState(false);
   const [msg,setMsg]=useState(null);
+
   async function submit(){
     setBusy(true);setMsg(null);
-    const d=await authCall(tab==="login"?"token?grant_type=password":"signup",{email,password:pw});
-    if(d.error||d.error_description){setMsg({t:"e",x:d.error_description||d.error});}
-    else if(tab==="signup"){setMsg({t:"s",x:"Account created! Now log in."});setTab("login");}
-    else{onAuth(d);}
+    try{
+      const d=await authCall(tab==="login"?"token?grant_type=password":"signup",{email,password:pw});
+      if(d.error||d.error_description){
+        setMsg({t:"e",x:d.error_description||d.error});
+      } else if(tab==="signup"){
+        setMsg({t:"s",x:"Account created! Now log in."});
+        setTab("login");
+      } else {
+        onAuth(d);
+      }
+    }catch(e){setMsg({t:"e",x:e.message});}
     setBusy(false);
   }
+
   return <div className="auth-screen">
     <div className="auth-box">
       <div style={{fontWeight:800,fontSize:26,color:"#0D1F3C",textAlign:"center",marginBottom:4}}>SHIELD<span style={{color:"#C9A84C"}}>.</span></div>
@@ -111,12 +122,12 @@ function Auth({onAuth}){
       <div style={{display:"flex",borderBottom:"1px solid #D0DCE8",marginBottom:"1rem"}}>
         {["login","signup"].map(t=><button key={t} onClick={()=>setTab(t)} style={{flex:1,padding:"0.45rem",fontSize:13,fontWeight:600,background:"none",border:"none",borderBottom:`2px solid ${tab===t?"#C9A84C":"transparent"}`,color:tab===t?"#0D1F3C":"#6B7A8D",cursor:"pointer",marginBottom:-1}}>{t==="login"?"Log In":"Create Account"}</button>)}
       </div>
-      {msg&&<div className={msg.t==="e"?"alert-e":"alert-s"}>{msg.x}</div>}
+      {msg&&<div className={`alert-${msg.t}`}>{msg.x}</div>}
       <label className="lbl">Email</label>
       <input className="inp" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@institution.edu"/>
       <label className="lbl">Password</label>
       <input className="inp" type="password" value={pw} onChange={e=>setPw(e.target.value)} placeholder="••••••••"/>
-      <button className="btn btn-p" style={{width:"100%",justifyContent:"center",marginTop:4}} onClick={submit} disabled={busy}>{busy?"…":tab==="login"?"Log In":"Create Account"}</button>
+      <button className="btn btn-p" style={{width:"100%",justifyContent:"center",marginTop:4}} onClick={submit} disabled={busy}>{busy?"Working…":tab==="login"?"Log In":"Create Account"}</button>
     </div>
   </div>;
 }
@@ -199,10 +210,7 @@ function Dashboard({inst,stats}){
 }
 
 function Programs({inst,userId,token}){
-  const [rows,setRows]=useState([]);
-  const [loading,setLoading]=useState(true);
-  const [show,setShow]=useState(false);
-  const [busy,setBusy]=useState(false);
+  const [rows,setRows]=useState([]);const [loading,setLoading]=useState(true);const [show,setShow]=useState(false);const [busy,setBusy]=useState(false);
   const [f,setF]=useState({name:"",type:"athletics",start_date:"",end_date:"",director_name:"",director_email:""});
   const u=(k,v)=>setF(p=>({...p,[k]:v}));
   async function load(){setLoading(true);try{const d=await api(`programs?institution_id=eq.${inst.id}&order=created_at.desc`,{token});setRows(d||[]);}catch(e){}setLoading(false);}
@@ -210,8 +218,7 @@ function Programs({inst,userId,token}){
   async function save(){setBusy(true);try{await api("programs",{method:"POST",token,body:JSON.stringify({...f,institution_id:inst.id,created_by:userId,invite_token:genId("INV"),status:"active"})});setShow(false);setF({name:"",type:"athletics",start_date:"",end_date:"",director_name:"",director_email:""});load();}catch(e){alert(e.message);}setBusy(false);}
   return <div>
     <div className="page-hdr"><div><div className="page-title">Programs</div><div className="page-sub">Sports and enrichment programs</div></div><button className="btn btn-p" onClick={()=>setShow(true)}>+ Register Program</button></div>
-    <div className="card">{loading?<div style={{color:"#6B7A8D",fontSize:13}}>Loading…</div>:rows.length===0?<div className="empty"><div style={{fontSize:32,marginBottom:8}}>📋</div><div style={{fontWeight:700,marginBottom:4}}>No programs yet</div></div>:
-    <div style={{overflowX:"auto"}}><table className="tbl"><thead><tr>{["Name","Type","Director","Status","Invite"].map(h=><th key={h} className="th">{h}</th>)}</tr></thead><tbody>{rows.map(r=><tr key={r.id}><td className="td" style={{fontWeight:700}}>{r.name}</td><td className="td"><span className="badge bb">{r.type}</span></td><td className="td">{r.director_name||"—"}</td><td className="td"><Badge s={r.status}/></td><td className="td"><button className="btn btn-gh" style={{fontSize:11,padding:"0.2rem 0.5rem"}} onClick={()=>{navigator.clipboard&&navigator.clipboard.writeText(r.invite_token);alert("Invite token copied!");}}>Copy</button></td></tr>)}</tbody></table></div>}</div>
+    <div className="card">{loading?<div style={{color:"#6B7A8D",fontSize:13}}>Loading…</div>:rows.length===0?<div className="empty"><div style={{fontSize:32,marginBottom:8}}>📋</div><div style={{fontWeight:700,marginBottom:4}}>No programs yet</div></div>:<div style={{overflowX:"auto"}}><table className="tbl"><thead><tr>{["Name","Type","Director","Status","Invite"].map(h=><th key={h} className="th">{h}</th>)}</tr></thead><tbody>{rows.map(r=><tr key={r.id}><td className="td" style={{fontWeight:700}}>{r.name}</td><td className="td"><span className="badge bb">{r.type}</span></td><td className="td">{r.director_name||"—"}</td><td className="td"><Badge s={r.status}/></td><td className="td"><button className="btn btn-gh" style={{fontSize:11,padding:"0.2rem 0.5rem"}} onClick={()=>{navigator.clipboard&&navigator.clipboard.writeText(r.invite_token);alert("Copied!");}}>Copy</button></td></tr>)}</tbody></table></div>}</div>
     {show&&<div className="ovr"><div className="modal">
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"1rem"}}><div style={{fontWeight:700,fontSize:15}}>Register Program</div><button style={{background:"none",border:"none",fontSize:20,cursor:"pointer"}} onClick={()=>setShow(false)}>×</button></div>
       <label className="lbl">Program Name</label><input className="inp" value={f.name} onChange={e=>u("name",e.target.value)} placeholder="Summer Basketball Camp"/>
@@ -232,8 +239,7 @@ function Participants({inst,token}){
   async function save(){setBusy(true);try{await api("participants",{method:"POST",token,body:JSON.stringify({...f,institution_id:inst.id,shield_id:genId("PRT"),background_check_status:"pending",consent_status:f.type==="minor"?"pending":"not_required"})});setShow(false);setF({first_name:"",last_name:"",dob:"",email:"",phone:"",guardian_name:"",guardian_email:"",guardian_phone:"",program_id:"",type:"minor",prev_institution:"",prev_institution_contact:"",is_compensated:false});load();}catch(e){alert(e.message);}setBusy(false);}
   return <div>
     <div className="page-hdr"><div><div className="page-title">Participants</div><div className="page-sub">All registered participants</div></div><button className="btn btn-p" onClick={()=>setShow(true)}>+ Add Participant</button></div>
-    <div className="card">{loading?<div style={{color:"#6B7A8D",fontSize:13}}>Loading…</div>:rows.length===0?<div className="empty"><div style={{fontSize:32,marginBottom:8}}>👤</div><div style={{fontWeight:700,marginBottom:4}}>No participants yet</div></div>:
-    <div style={{overflowX:"auto"}}><table className="tbl"><thead><tr>{["SHIELD ID","Name","Type","Guardian","BG Check","Consent","Paid"].map(h=><th key={h} className="th">{h}</th>)}</tr></thead><tbody>{rows.map(r=><tr key={r.id}><td className="td" style={{fontFamily:"monospace",fontSize:10,color:"#6B7A8D"}}>{r.shield_id}</td><td className="td" style={{fontWeight:700}}>{r.first_name} {r.last_name}</td><td className="td"><span className="badge bb">{r.type}</span></td><td className="td" style={{fontSize:11}}>{r.guardian_name||"—"}</td><td className="td"><Badge s={r.background_check_status}/></td><td className="td"><Badge s={r.consent_status}/></td><td className="td">{r.is_compensated?"✓":"—"}</td></tr>)}</tbody></table></div>}</div>
+    <div className="card">{loading?<div style={{color:"#6B7A8D",fontSize:13}}>Loading…</div>:rows.length===0?<div className="empty"><div style={{fontSize:32,marginBottom:8}}>👤</div><div style={{fontWeight:700,marginBottom:4}}>No participants yet</div></div>:<div style={{overflowX:"auto"}}><table className="tbl"><thead><tr>{["SHIELD ID","Name","Type","Guardian","BG Check","Consent","Paid"].map(h=><th key={h} className="th">{h}</th>)}</tr></thead><tbody>{rows.map(r=><tr key={r.id}><td className="td" style={{fontFamily:"monospace",fontSize:10,color:"#6B7A8D"}}>{r.shield_id}</td><td className="td" style={{fontWeight:700}}>{r.first_name} {r.last_name}</td><td className="td"><span className="badge bb">{r.type}</span></td><td className="td" style={{fontSize:11}}>{r.guardian_name||"—"}</td><td className="td"><Badge s={r.background_check_status}/></td><td className="td"><Badge s={r.consent_status}/></td><td className="td">{r.is_compensated?"✓":"—"}</td></tr>)}</tbody></table></div>}</div>
     {show&&<div className="ovr"><div className="modal">
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"1rem"}}><div style={{fontWeight:700,fontSize:15}}>Add Participant</div><button style={{background:"none",border:"none",fontSize:20,cursor:"pointer"}} onClick={()=>setShow(false)}>×</button></div>
       <label className="lbl">Type</label><select className="inp" value={f.type} onChange={e=>u("type",e.target.value)}><option value="minor">Minor</option><option value="authorized_adult">Authorized Adult (18+)</option><option value="student_athlete">Student Athlete</option><option value="volunteer">Volunteer</option></select>
@@ -258,8 +264,7 @@ function Incidents({inst,userId,token}){
   async function save(){setBusy(true);try{await api("incidents",{method:"POST",token,body:JSON.stringify({...f,institution_id:inst.id,reported_by:userId,status:"open"})});setShow(false);setF({title:"",description:"",severity:"low",date_occurred:"",involved_parties:"",action_taken:""});load();}catch(e){alert(e.message);}setBusy(false);}
   return <div>
     <div className="page-hdr"><div><div className="page-title">Incident Reports</div><div className="page-sub">Document and track compliance incidents</div></div><button className="btn btn-d" onClick={()=>setShow(true)}>+ Log Incident</button></div>
-    <div className="card">{loading?<div style={{color:"#6B7A8D",fontSize:13}}>Loading…</div>:rows.length===0?<div className="empty"><div style={{fontSize:32,marginBottom:8}}>📁</div><div style={{fontWeight:700,marginBottom:4}}>No incidents on record</div></div>:
-    <div style={{overflowX:"auto"}}><table className="tbl"><thead><tr>{["Title","Severity","Date","Status"].map(h=><th key={h} className="th">{h}</th>)}</tr></thead><tbody>{rows.map(r=><tr key={r.id}><td className="td" style={{fontWeight:700}}>{r.title}</td><td className="td"><Badge s={r.severity}/></td><td className="td" style={{fontSize:11}}>{r.date_occurred||"—"}</td><td className="td"><Badge s={r.status}/></td></tr>)}</tbody></table></div>}</div>
+    <div className="card">{loading?<div style={{color:"#6B7A8D",fontSize:13}}>Loading…</div>:rows.length===0?<div className="empty"><div style={{fontSize:32,marginBottom:8}}>📁</div><div style={{fontWeight:700,marginBottom:4}}>No incidents on record</div></div>:<div style={{overflowX:"auto"}}><table className="tbl"><thead><tr>{["Title","Severity","Date","Status"].map(h=><th key={h} className="th">{h}</th>)}</tr></thead><tbody>{rows.map(r=><tr key={r.id}><td className="td" style={{fontWeight:700}}>{r.title}</td><td className="td"><Badge s={r.severity}/></td><td className="td" style={{fontSize:11}}>{r.date_occurred||"—"}</td><td className="td"><Badge s={r.status}/></td></tr>)}</tbody></table></div>}</div>
     {show&&<div className="ovr"><div className="modal">
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"1rem"}}><div style={{fontWeight:700,fontSize:15}}>Log Incident</div><button style={{background:"none",border:"none",fontSize:20,cursor:"pointer"}} onClick={()=>setShow(false)}>×</button></div>
       <label className="lbl">Title</label><input className="inp" value={f.title} onChange={e=>u("title",e.target.value)} placeholder="Brief description"/>
@@ -275,7 +280,7 @@ function Incidents({inst,userId,token}){
 function App(){
   const [session,setSession]=useState(null);const [profile,setProfile]=useState(null);const [inst,setInst]=useState(null);const [page,setPage]=useState("dashboard");const [stats,setStats]=useState({programs:0,participants:0,pending:0,incidents:0});const [booting,setBooting]=useState(true);
   useEffect(()=>{try{const raw=localStorage.getItem("shield_sess");if(raw){const s=JSON.parse(raw);setSession(s);loadProfile(s.user.id,s.access_token);}}catch(e){}setBooting(false);},[]);
-  async function loadProfile(uid,token){try{const p=await api(`profiles?id=eq.${uid}`,{token});const prof=p&&p[0];if(prof){setProfile(prof);if(prof.institution_id){const i=await api(`institutions?id=eq.${prof.institution_id}`,{token});if(i&&i[0]){setInst(i[0]);loadStats(i[0].id,token);}}}}catch(e){}}
+  async function loadProfile(uid,token){try{const p=await api(`profiles?id=eq.${uid}`,{token});const prof=p&&p[0];if(prof){setProfile(prof);if(prof.institution_id){const i=await api(`institutions?id=eq.${prof.institution_id}`,{token});if(i&&i[0]){setInst(i[0]);loadStats(i[0].id,token);}}}}catch(e){console.log("profile error",e);}}
   async function loadStats(instId,token){try{const [pg,pt,inc]=await Promise.all([api(`programs?institution_id=eq.${instId}&select=id`,{token}),api(`participants?institution_id=eq.${instId}&select=id`,{token}),api(`incidents?institution_id=eq.${instId}&status=eq.open&select=id`,{token})]);setStats({programs:pg&&pg.length||0,participants:pt&&pt.length||0,pending:0,incidents:inc&&inc.length||0});}catch(e){}}
   function onAuth(data){localStorage.setItem("shield_sess",JSON.stringify(data));setSession(data);loadProfile(data.user.id,data.access_token);}
   function logout(){localStorage.removeItem("shield_sess");setSession(null);setProfile(null);setInst(null);}
