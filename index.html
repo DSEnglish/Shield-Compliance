@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SHIELD Compliance</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#EBF0F7;color:#0D1F3C}
+.topbar{background:#0D1F3C;border-bottom:3px solid #C9A84C;padding:0 1.5rem;height:52px;display:flex;align-items:center;justify-content:space-between}
+.brand{font-weight:800;font-size:18px;color:#fff;letter-spacing:.06em}
+.brand span{color:#C9A84C}
+.layout{display:flex;min-height:calc(100vh - 52px)}
+.sidebar{width:190px;background:#0D1F3C;padding:.75rem 0;flex-shrink:0}
+.sec-lbl{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#6B7A8D;padding:.6rem 1rem .2rem}
+.nav-btn{display:flex;align-items:center;width:100%;padding:.45rem 1rem;font-size:13px;color:#E8F0F7;background:none;border:none;border-left:3px solid transparent;cursor:pointer;text-align:left}
+.nav-btn.active{color:#C9A84C;background:rgba(201,168,76,.1);border-left-color:#C9A84C;font-weight:600}
+.main{flex:1;padding:1.25rem;overflow-y:auto}
+.card{background:#fff;border-radius:10px;border:1px solid #D0DCE8;padding:1.25rem;margin-bottom:1rem}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.75rem;margin-bottom:1rem}
+.stat{background:#fff;border:1px solid #D0DCE8;border-top:3px solid #C9A84C;border-radius:10px;padding:1rem}
+.stat-v{font-weight:800;font-size:26px;color:#0D1F3C}
+.stat-l{font-size:10px;color:#6B7A8D;text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:.4rem .9rem;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;border:none}
+.btn-p{background:#0D1F3C;color:#fff}
+.btn-g{background:#C9A84C;color:#0D1F3C}
+.btn-gh{background:transparent;color:#0D1F3C;border:1px solid #D0DCE8}
+.btn-d{background:#C0392B;color:#fff}
+.lbl{display:block;font-size:12px;font-weight:600;margin-bottom:3px;color:#0D1F3C}
+.inp{width:100%;padding:.45rem .65rem;border:1px solid #D0DCE8;border-radius:6px;font-size:13px;font-family:inherit;color:#0D1F3C;background:#fff;box-sizing:border-box;margin-bottom:.65rem}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:.65rem}
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.th{background:#EBF0F7;padding:.55rem .8rem;font-size:10px;font-weight:700;text-align:left;text-transform:uppercase;border-bottom:1px solid #D0DCE8;color:#6B7A8D}
+.td{padding:.6rem .8rem;border-bottom:1px solid #D0DCE8;color:#0D1F3C}
+.badge{display:inline-block;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase}
+.bg{background:#D4EDDA;color:#1E7B4B}
+.by{background:#FFF3CD;color:#856404}
+.br{background:#F8D7DA;color:#C0392B}
+.bb{background:#D1ECF1;color:#0C5460}
+.bgr{background:#E2E8F0;color:#6B7A8D}
+.ovr{position:fixed;inset:0;background:rgba(13,31,60,.55);display:flex;align-items:center;justify-content:center;z-index:999;padding:1rem}
+.modal{background:#fff;border-radius:12px;padding:1.5rem;width:100%;max-width:500px;max-height:90vh;overflow-y:auto}
+.alert-e{background:#F8D7DA;color:#C0392B;padding:.6rem .8rem;border-radius:6px;font-size:12px;margin-bottom:.75rem}
+.alert-s{background:#D4EDDA;color:#1E7B4B;padding:.6rem .8rem;border-radius:6px;font-size:12px;margin-bottom:.75rem}
+.tag{display:inline-block;background:#EBF0F7;border:1px solid #D0DCE8;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:600;margin:2px}
+.empty{text-align:center;padding:2.5rem 1rem;color:#6B7A8D}
+.divider{border:none;border-top:1px solid #D0DCE8;margin:.85rem 0}
+.auth-screen{min-height:100vh;background:#0D1F3C;display:flex;align-items:center;justify-content:center;padding:1rem}
+.auth-box{background:#fff;border-radius:14px;padding:2rem;width:100%;max-width:380px}
+.page-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1rem}
+.page-title{font-weight:800;font-size:18px;color:#0D1F3C}
+.page-sub{font-size:12px;color:#6B7A8D;margin-top:2px}
+.topbar-right{display:flex;align-items:center;gap:8px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect}=React;
+const SU="https://zqotazbljxkxyjenherx.supabase.co";
+const SK="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpxb3RhemJsanhreHlqZW5oZXJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExOTM1OTYsImV4cCI6MjA5Njc2OTU5Nn0.USrwuZtG-cvSo_x-vxDHHYqh7CjGG3JXVAK77IEQGCQ";
+
+async function api(path,opts={}){
+  const res=await fetch(`${SU}/rest/v1/${path}`,{headers:{apikey:SK,Authorization:`Bearer ${opts.token||SK}`,"Content-Type":"application/json",Prefer:"return=representation"},method:opts.method||"GET",body:opts.body});
+  if(res.status===204)return null;
+  const d=await res.json();
+  if(!res.ok)throw new Error(d.message||d.error_description||JSON.stringify(d));
+  return d;
+}
+async function authCall(path,body){
+  const res=await fetch(`${SU}/auth/v1/${path}`,{method:"POST",headers:{apikey:SK,"Content-Type":"application/json"},body:JSON.stringify(body)});
+  return res.json();
+}
+
+const RULES={
+  MA:{label:"Massachusetts",checks:["CORI","SORI","DCF Screening"],renewal:12,note:"CORI required for all adults with minor access."},
+  PA:{label:"Pennsylvania",checks:["Act 151","Act 34","Act 114 FBI"],renewal:60,note:"Act 153 — all three clearances required."},
+  NY:{label:"New York",checks:["NYSID Criminal","SCR Child Abuse","Sex Offender Registry"],renewal:24,note:"SAFE Kids Act applies."},
+  FL:{label:"Florida",checks:["FDLE Level 2","Sexual Predator Registry"],renewal:12,note:"Level 2 required for direct contact."},
+  TX:{label:"Texas",checks:["DPS Criminal History","Sex Offender Registry"],renewal:24,note:"Texas Education Code applies."},
+  CA:{label:"California",checks:["DOJ Fingerprint","FBI Fingerprint","Megan's Law"],renewal:36,note:"AB 506 two-adult rule required."},
+  OH:{label:"Ohio",checks:["BCI Criminal","FBI Background","SORS"],renewal:12,note:"Ohio Revised Code §3313 applies."},
+  NJ:{label:"New Jersey",checks:["SBI Criminal","Child Abuse Registry","Sex Offender Registry"],renewal:24,note:"NJ Childcare Act requirements."},
+};
+
+function genId(p="SHD"){return `${p}-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2,5).toUpperCase()}`;}
+
+function Badge({s}){const m={active:"bg",cleared:"bg",complete:"bg",pending:"by",submitted:"bb",open:"by",low:"bgr",medium:"by",high:"br",expired:"br",flagged:"br","not_required":"bgr"};return <span className={`badge ${m[s]||"bgr"}`}>{s}</span>;}
+
+function Auth({onAuth}){
+  const [tab,setTab]=useState("login");
+  const [email,setEmail]=useState("");
+  const [pw,setPw]=useState("");
+  const [busy,setBusy]=useState(false);
+  const [msg,setMsg]=useState(null);
+  async function submit(){
+    setBusy(true);setMsg(null);
+    const d=await authCall(tab==="login"?"token?grant_type=password":"signup",{email,password:pw});
+    if(d.error||d.error_description){setMsg({t:"e",x:d.error_description||d.error});}
+    else if(tab==="signup"){setMsg({t:"s",x:"Account created! Now log in."});setTab("login");}
+    else{onAuth(d);}
+    setBusy(false);
+  }
+  return <div className="auth-screen">
+    <div className="auth-box">
+      <div style={{fontWeight:800,fontSize:26,color:"#0D1F3C",textAlign:"center",marginBottom:4}}>SHIELD<span style={{color:"#C9A84C"}}>.</span></div>
+      <div style={{fontSize:12,color:"#6B7A8D",textAlign:"center",marginBottom:"1.25rem"}}>Protection of Minors Compliance Platform</div>
+      <div style={{display:"flex",borderBottom:"1px solid #D0DCE8",marginBottom:"1rem"}}>
+        {["login","signup"].map(t=><button key={t} onClick={()=>setTab(t)} style={{flex:1,padding:"0.45rem",fontSize:13,fontWeight:600,background:"none",border:"none",borderBottom:`2px solid ${tab===t?"#C9A84C":"transparent"}`,color:tab===t?"#0D1F3C":"#6B7A8D",cursor:"pointer",marginBottom:-1}}>{t==="login"?"Log In":"Create Account"}</button>)}
+      </div>
+      {msg&&<div className={msg.t==="e"?"alert-e":"alert-s"}>{msg.x}</div>}
+      <label className="lbl">Email</label>
+      <input className="inp" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@institution.edu"/>
+      <label className="lbl">Password</label>
+      <input className="inp" type="password" value={pw} onChange={e=>setPw(e.target.value)} placeholder="••••••••"/>
+      <button className="btn btn-p" style={{width:"100%",justifyContent:"center",marginTop:4}} onClick={submit} disabled={busy}>{busy?"…":tab==="login"?"Log In":"Create Account"}</button>
+    </div>
+  </div>;
+}
+
+function Setup({userId,token,onDone}){
+  const [step,setStep]=useState(0);
+  const [busy,setBusy]=useState(false);
+  const [err,setErr]=useState(null);
+  const [f,setF]=useState({name:"",type:"university",city:"",state:"MA",address:"",phone:"",website:"",fn:"",ln:"",title:"",aphone:""});
+  const u=(k,v)=>setF(p=>({...p,[k]:v}));
+  const steps=["Institution","Location","Admin","Review"];
+  const comp=RULES[f.state];
+  async function finish(){
+    setBusy(true);setErr(null);
+    try{
+      const inst=await api("institutions",{method:"POST",token,body:JSON.stringify({name:f.name,type:f.type,city:f.city,state:f.state,address:f.address,phone:f.phone,website:f.website,compliance_config:comp,created_by:userId})});
+      const i=Array.isArray(inst)?inst[0]:inst;
+      await api(`profiles?id=eq.${userId}`,{method:"PATCH",token,body:JSON.stringify({institution_id:i.id,role:"institution_admin",first_name:f.fn,last_name:f.ln,title:f.title,phone:f.aphone})});
+      onDone(i);
+    }catch(e){setErr(e.message);}
+    setBusy(false);
+  }
+  return <div style={{minHeight:"100vh",background:"#0D1F3C",display:"flex",alignItems:"center",justifyContent:"center",padding:"1rem"}}>
+    <div style={{background:"#fff",borderRadius:14,padding:"2rem",width:"100%",maxWidth:500}}>
+      <div style={{fontWeight:800,fontSize:20,color:"#0D1F3C",marginBottom:4}}>SHIELD<span style={{color:"#C9A84C"}}>.</span></div>
+      <div style={{fontSize:12,color:"#6B7A8D",marginBottom:"1rem"}}>Set up your institution</div>
+      <div style={{display:"flex",borderRadius:8,overflow:"hidden",border:"1px solid #D0DCE8",marginBottom:"1.25rem"}}>
+        {steps.map((s,i)=><div key={s} style={{flex:1,padding:"0.5rem 0.25rem",textAlign:"center",fontSize:11,fontWeight:600,background:i===step?"#0D1F3C":i<step?"#1E7B4B":"#EBF0F7",color:i<=step?"#fff":"#6B7A8D",borderRight:i<steps.length-1?"1px solid #D0DCE8":"none"}}>{i<step?"✓ ":""}{s}</div>)}
+      </div>
+      {err&&<div className="alert-e">{err}</div>}
+      {step===0&&<>
+        <label className="lbl">Institution Name</label><input className="inp" value={f.name} onChange={e=>u("name",e.target.value)} placeholder="Springfield University"/>
+        <label className="lbl">Type</label><select className="inp" value={f.type} onChange={e=>u("type",e.target.value)}><option value="university">University</option><option value="college">College</option><option value="community_college">Community College</option></select>
+        <label className="lbl">Website</label><input className="inp" value={f.website} onChange={e=>u("website",e.target.value)} placeholder="https://"/>
+        <label className="lbl">Phone</label><input className="inp" value={f.phone} onChange={e=>u("phone",e.target.value)} placeholder="(555) 000-0000"/>
+      </>}
+      {step===1&&<>
+        <label className="lbl">State</label><select className="inp" value={f.state} onChange={e=>u("state",e.target.value)}>{Object.entries(RULES).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}</select>
+        <label className="lbl">City</label><input className="inp" value={f.city} onChange={e=>u("city",e.target.value)}/>
+        <label className="lbl">Address</label><input className="inp" value={f.address} onChange={e=>u("address",e.target.value)}/>
+        {comp&&<div style={{background:"#EBF0F7",border:"1px solid #D0DCE8",borderRadius:8,padding:"0.85rem",marginBottom:"0.75rem"}}><div style={{fontSize:11,fontWeight:700,marginBottom:5}}>✓ Compliance loaded for {comp.label}</div><div style={{marginBottom:4}}>{comp.checks.map(c=><span key={c} className="tag">{c}</span>)}</div><div style={{fontSize:11,color:"#6B7A8D"}}>{comp.note} · Renewal: {comp.renewal} months</div></div>}
+      </>}
+      {step===2&&<>
+        <div className="row2"><div><label className="lbl">First Name</label><input className="inp" value={f.fn} onChange={e=>u("fn",e.target.value)}/></div><div><label className="lbl">Last Name</label><input className="inp" value={f.ln} onChange={e=>u("ln",e.target.value)}/></div></div>
+        <label className="lbl">Title</label><input className="inp" value={f.title} onChange={e=>u("title",e.target.value)} placeholder="Director of Compliance"/>
+        <label className="lbl">Phone</label><input className="inp" value={f.aphone} onChange={e=>u("aphone",e.target.value)}/>
+      </>}
+      {step===3&&<div>
+        <div style={{marginBottom:"0.75rem"}}><div style={{fontWeight:600,fontSize:12,marginBottom:4}}>Institution</div><div style={{fontSize:12,color:"#6B7A8D"}}>{f.name} · {f.city}, {f.state}</div></div>
+        <hr className="divider"/>
+        <div style={{marginBottom:"0.75rem"}}><div style={{fontWeight:600,fontSize:12,marginBottom:4}}>Compliance</div>{comp&&comp.checks.map(c=><span key={c} className="tag">{c}</span>)}</div>
+        <hr className="divider"/>
+        <div><div style={{fontWeight:600,fontSize:12,marginBottom:4}}>Admin</div><div style={{fontSize:12,color:"#6B7A8D"}}>{f.fn} {f.ln} · {f.title}</div></div>
+      </div>}
+      <div style={{display:"flex",gap:8,justifyContent:"flex-end",marginTop:"0.85rem"}}>
+        {step>0&&<button className="btn btn-gh" onClick={()=>setStep(s=>s-1)}>Back</button>}
+        {step<3&&<button className="btn btn-p" onClick={()=>setStep(s=>s+1)} disabled={step===0&&!f.name}>Next</button>}
+        {step===3&&<button className="btn btn-g" onClick={finish} disabled={busy}>{busy?"…":"Finish Setup"}</button>}
+      </div>
+    </div>
+  </div>;
+}
+
+function Dashboard({inst,stats}){
+  const comp=RULES[inst&&inst.state]||{};
+  return <div>
+    <div className="page-hdr"><div><div className="page-title">Dashboard</div><div className="page-sub">{inst&&inst.name} · {inst&&inst.city}, {inst&&inst.state}</div></div></div>
+    <div className="stat-grid">
+      {[["Programs",stats.programs],["Participants",stats.participants],["Pending",stats.pending],["Incidents",stats.incidents]].map(([l,v])=>(
+        <div key={l} className="stat"><div className="stat-v">{v||0}</div><div className="stat-l">{l}</div></div>
+      ))}
+    </div>
+    <div className="card">
+      <div style={{fontWeight:700,fontSize:14,marginBottom:"0.75rem"}}>Active Compliance — {comp.label}</div>
+      <div style={{marginBottom:6}}>{comp.checks&&comp.checks.map(c=><span key={c} className="tag">{c}</span>)}</div>
+      <div style={{fontSize:12,color:"#6B7A8D"}}>{comp.note}</div>
+      <div style={{fontSize:12,color:"#6B7A8D",marginTop:4}}>Renewal every {comp.renewal} months</div>
+    </div>
+  </div>;
+}
+
+function Programs({inst,userId,token}){
+  const [rows,setRows]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [show,setShow]=useState(false);
+  const [busy,setBusy]=useState(false);
+  const [f,setF]=useState({name:"",type:"athletics",start_date:"",end_date:"",director_name:"",director_email:""});
+  const u=(k,v)=>setF(p=>({...p,[k]:v}));
+  async function load(){setLoading(true);try{const d=await api(`programs?institution_id=eq.${inst.id}&order=created_at.desc`,{token});setRows(d||[]);}catch(e){}setLoading(false);}
+  useEffect(()=>{if(inst&&inst.id)load();},[inst]);
+  async function save(){setBusy(true);try{await api("programs",{method:"POST",token,body:JSON.stringify({...f,institution_id:inst.id,created_by:userId,invite_token:genId("INV"),status:"active"})});setShow(false);setF({name:"",type:"athletics",start_date:"",end_date:"",director_name:"",director_email:""});load();}catch(e){alert(e.message);}setBusy(false);}
+  return <div>
+    <div className="page-hdr"><div><div className="page-title">Programs</div><div className="page-sub">Sports and enrichment programs</div></div><button className="btn btn-p" onClick={()=>setShow(true)}>+ Register Program</button></div>
+    <div className="card">{loading?<div style={{color:"#6B7A8D",fontSize:13}}>Loading…</div>:rows.length===0?<div className="empty"><div style={{fontSize:32,marginBottom:8}}>📋</div><div style={{fontWeight:700,marginBottom:4}}>No programs yet</div></div>:
+    <div style={{overflowX:"auto"}}><table className="tbl"><thead><tr>{["Name","Type","Director","Status","Invite"].map(h=><th key={h} className="th">{h}</th>)}</tr></thead><tbody>{rows.map(r=><tr key={r.id}><td className="td" style={{fontWeight:700}}>{r.name}</td><td className="td"><span className="badge bb">{r.type}</span></td><td className="td">{r.director_name||"—"}</td><td className="td"><Badge s={r.status}/></td><td className="td"><button className="btn btn-gh" style={{fontSize:11,padding:"0.2rem 0.5rem"}} onClick={()=>{navigator.clipboard&&navigator.clipboard.writeText(r.invite_token);alert("Invite token copied!");}}>Copy</button></td></tr>)}</tbody></table></div>}</div>
+    {show&&<div className="ovr"><div className="modal">
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"1rem"}}><div style={{fontWeight:700,fontSize:15}}>Register Program</div><button style={{background:"none",border:"none",fontSize:20,cursor:"pointer"}} onClick={()=>setShow(false)}>×</button></div>
+      <label className="lbl">Program Name</label><input className="inp" value={f.name} onChange={e=>u("name",e.target.value)} placeholder="Summer Basketball Camp"/>
+      <label className="lbl">Type</label><select className="inp" value={f.type} onChange={e=>u("type",e.target.value)}><option value="athletics">Athletics</option><option value="enrichment">Enrichment</option><option value="academic">Academic</option><option value="residential">Residential</option></select>
+      <div className="row2"><div><label className="lbl">Start Date</label><input className="inp" type="date" value={f.start_date} onChange={e=>u("start_date",e.target.value)}/></div><div><label className="lbl">End Date</label><input className="inp" type="date" value={f.end_date} onChange={e=>u("end_date",e.target.value)}/></div></div>
+      <div className="row2"><div><label className="lbl">Director Name</label><input className="inp" value={f.director_name} onChange={e=>u("director_name",e.target.value)}/></div><div><label className="lbl">Director Email</label><input className="inp" type="email" value={f.director_email} onChange={e=>u("director_email",e.target.value)}/></div></div>
+      <div style={{display:"flex",gap:8,justifyContent:"flex-end",marginTop:"0.5rem"}}><button className="btn btn-gh" onClick={()=>setShow(false)}>Cancel</button><button className="btn btn-p" onClick={save} disabled={busy||!f.name}>{busy?"…":"Register & Generate Invite"}</button></div>
+    </div></div>}
+  </div>;
+}
+
+function Participants({inst,token}){
+  const [rows,setRows]=useState([]);const [progs,setProgs]=useState([]);const [loading,setLoading]=useState(true);const [show,setShow]=useState(false);const [busy,setBusy]=useState(false);
+  const [f,setF]=useState({first_name:"",last_name:"",dob:"",email:"",phone:"",guardian_name:"",guardian_email:"",guardian_phone:"",program_id:"",type:"minor",prev_institution:"",prev_institution_contact:"",is_compensated:false});
+  const u=(k,v)=>setF(p=>({...p,[k]:v}));
+  async function load(){setLoading(true);try{const [p,pg]=await Promise.all([api(`participants?institution_id=eq.${inst.id}&order=created_at.desc`,{token}),api(`programs?institution_id=eq.${inst.id}`,{token})]);setRows(p||[]);setProgs(pg||[]);}catch(e){}setLoading(false);}
+  useEffect(()=>{if(inst&&inst.id)load();},[inst]);
+  async function save(){setBusy(true);try{await api("participants",{method:"POST",token,body:JSON.stringify({...f,institution_id:inst.id,shield_id:genId("PRT"),background_check_status:"pending",consent_status:f.type==="minor"?"pending":"not_required"})});setShow(false);setF({first_name:"",last_name:"",dob:"",email:"",phone:"",guardian_name:"",guardian_email:"",guardian_phone:"",program_id:"",type:"minor",prev_institution:"",prev_institution_contact:"",is_compensated:false});load();}catch(e){alert(e.message);}setBusy(false);}
+  return <div>
+    <div className="page-hdr"><div><div className="page-title">Participants</div><div className="page-sub">All registered participants</div></div><button className="btn btn-p" onClick={()=>setShow(true)}>+ Add Participant</button></div>
+    <div className="card">{loading?<div style={{color:"#6B7A8D",fontSize:13}}>Loading…</div>:rows.length===0?<div className="empty"><div style={{fontSize:32,marginBottom:8}}>👤</div><div style={{fontWeight:700,marginBottom:4}}>No participants yet</div></div>:
+    <div style={{overflowX:"auto"}}><table className="tbl"><thead><tr>{["SHIELD ID","Name","Type","Guardian","BG Check","Consent","Paid"].map(h=><th key={h} className="th">{h}</th>)}</tr></thead><tbody>{rows.map(r=><tr key={r.id}><td className="td" style={{fontFamily:"monospace",fontSize:10,color:"#6B7A8D"}}>{r.shield_id}</td><td className="td" style={{fontWeight:700}}>{r.first_name} {r.last_name}</td><td className="td"><span className="badge bb">{r.type}</span></td><td className="td" style={{fontSize:11}}>{r.guardian_name||"—"}</td><td className="td"><Badge s={r.background_check_status}/></td><td className="td"><Badge s={r.consent_status}/></td><td className="td">{r.is_compensated?"✓":"—"}</td></tr>)}</tbody></table></div>}</div>
+    {show&&<div className="ovr"><div className="modal">
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"1rem"}}><div style={{fontWeight:700,fontSize:15}}>Add Participant</div><button style={{background:"none",border:"none",fontSize:20,cursor:"pointer"}} onClick={()=>setShow(false)}>×</button></div>
+      <label className="lbl">Type</label><select className="inp" value={f.type} onChange={e=>u("type",e.target.value)}><option value="minor">Minor</option><option value="authorized_adult">Authorized Adult (18+)</option><option value="student_athlete">Student Athlete</option><option value="volunteer">Volunteer</option></select>
+      <label className="lbl">Program</label><select className="inp" value={f.program_id} onChange={e=>u("program_id",e.target.value)}><option value="">— Select —</option>{progs.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>
+      <div className="row2"><div><label className="lbl">First Name</label><input className="inp" value={f.first_name} onChange={e=>u("first_name",e.target.value)}/></div><div><label className="lbl">Last Name</label><input className="inp" value={f.last_name} onChange={e=>u("last_name",e.target.value)}/></div></div>
+      <div className="row2"><div><label className="lbl">Date of Birth</label><input className="inp" type="date" value={f.dob} onChange={e=>u("dob",e.target.value)}/></div><div><label className="lbl">Phone</label><input className="inp" value={f.phone} onChange={e=>u("phone",e.target.value)}/></div></div>
+      <label className="lbl">Email</label><input className="inp" type="email" value={f.email} onChange={e=>u("email",e.target.value)}/>
+      {f.type==="minor"&&<><hr className="divider"/><div style={{fontWeight:600,fontSize:12,marginBottom:"0.5rem"}}>Parent / Guardian</div><label className="lbl">Guardian Name</label><input className="inp" value={f.guardian_name} onChange={e=>u("guardian_name",e.target.value)}/><div className="row2"><div><label className="lbl">Guardian Email</label><input className="inp" type="email" value={f.guardian_email} onChange={e=>u("guardian_email",e.target.value)}/></div><div><label className="lbl">Guardian Phone</label><input className="inp" value={f.guardian_phone} onChange={e=>u("guardian_phone",e.target.value)}/></div></div></>}
+      {f.type!=="minor"&&<><hr className="divider"/><div style={{fontWeight:600,fontSize:12,marginBottom:"0.5rem"}}>Prior Institution <span style={{fontWeight:400,color:"#6B7A8D"}}>(optional)</span></div><label className="lbl">Institution Name</label><input className="inp" value={f.prev_institution} onChange={e=>u("prev_institution",e.target.value)}/><label className="lbl">Contact Info</label><input className="inp" value={f.prev_institution_contact} onChange={e=>u("prev_institution_contact",e.target.value)}/></>}
+      <label style={{display:"flex",alignItems:"center",gap:8,fontSize:12,cursor:"pointer",marginBottom:"0.75rem"}}><input type="checkbox" checked={f.is_compensated} onChange={e=>u("is_compensated",e.target.checked)}/> Being compensated</label>
+      <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}><button className="btn btn-gh" onClick={()=>setShow(false)}>Cancel</button><button className="btn btn-p" onClick={save} disabled={busy||!f.first_name||!f.last_name}>{busy?"…":"Add & Assign SHIELD ID"}</button></div>
+    </div></div>}
+  </div>;
+}
+
+function Incidents({inst,userId,token}){
+  const [rows,setRows]=useState([]);const [loading,setLoading]=useState(true);const [show,setShow]=useState(false);const [busy,setBusy]=useState(false);
+  const [f,setF]=useState({title:"",description:"",severity:"low",date_occurred:"",involved_parties:"",action_taken:""});
+  const u=(k,v)=>setF(p=>({...p,[k]:v}));
+  async function load(){setLoading(true);try{const d=await api(`incidents?institution_id=eq.${inst.id}&order=created_at.desc`,{token});setRows(d||[]);}catch(e){}setLoading(false);}
+  useEffect(()=>{if(inst&&inst.id)load();},[inst]);
+  async function save(){setBusy(true);try{await api("incidents",{method:"POST",token,body:JSON.stringify({...f,institution_id:inst.id,reported_by:userId,status:"open"})});setShow(false);setF({title:"",description:"",severity:"low",date_occurred:"",involved_parties:"",action_taken:""});load();}catch(e){alert(e.message);}setBusy(false);}
+  return <div>
+    <div className="page-hdr"><div><div className="page-title">Incident Reports</div><div className="page-sub">Document and track compliance incidents</div></div><button className="btn btn-d" onClick={()=>setShow(true)}>+ Log Incident</button></div>
+    <div className="card">{loading?<div style={{color:"#6B7A8D",fontSize:13}}>Loading…</div>:rows.length===0?<div className="empty"><div style={{fontSize:32,marginBottom:8}}>📁</div><div style={{fontWeight:700,marginBottom:4}}>No incidents on record</div></div>:
+    <div style={{overflowX:"auto"}}><table className="tbl"><thead><tr>{["Title","Severity","Date","Status"].map(h=><th key={h} className="th">{h}</th>)}</tr></thead><tbody>{rows.map(r=><tr key={r.id}><td className="td" style={{fontWeight:700}}>{r.title}</td><td className="td"><Badge s={r.severity}/></td><td className="td" style={{fontSize:11}}>{r.date_occurred||"—"}</td><td className="td"><Badge s={r.status}/></td></tr>)}</tbody></table></div>}</div>
+    {show&&<div className="ovr"><div className="modal">
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"1rem"}}><div style={{fontWeight:700,fontSize:15}}>Log Incident</div><button style={{background:"none",border:"none",fontSize:20,cursor:"pointer"}} onClick={()=>setShow(false)}>×</button></div>
+      <label className="lbl">Title</label><input className="inp" value={f.title} onChange={e=>u("title",e.target.value)} placeholder="Brief description"/>
+      <div className="row2"><div><label className="lbl">Severity</label><select className="inp" value={f.severity} onChange={e=>u("severity",e.target.value)}><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></div><div><label className="lbl">Date</label><input className="inp" type="date" value={f.date_occurred} onChange={e=>u("date_occurred",e.target.value)}/></div></div>
+      <label className="lbl">Involved Parties</label><input className="inp" value={f.involved_parties} onChange={e=>u("involved_parties",e.target.value)}/>
+      <label className="lbl">Description</label><textarea className="inp" rows="3" value={f.description} onChange={e=>u("description",e.target.value)} style={{resize:"vertical"}}/>
+      <label className="lbl">Action Taken</label><textarea className="inp" rows="2" value={f.action_taken} onChange={e=>u("action_taken",e.target.value)} style={{resize:"vertical"}}/>
+      <div style={{display:"flex",gap:8,justifyContent:"flex-end",marginTop:"0.5rem"}}><button className="btn btn-gh" onClick={()=>setShow(false)}>Cancel</button><button className="btn btn-d" onClick={save} disabled={busy||!f.title}>{busy?"…":"Submit Report"}</button></div>
+    </div></div>}
+  </div>;
+}
+
+function App(){
+  const [session,setSession]=useState(null);const [profile,setProfile]=useState(null);const [inst,setInst]=useState(null);const [page,setPage]=useState("dashboard");const [stats,setStats]=useState({programs:0,participants:0,pending:0,incidents:0});const [booting,setBooting]=useState(true);
+  useEffect(()=>{try{const raw=localStorage.getItem("shield_sess");if(raw){const s=JSON.parse(raw);setSession(s);loadProfile(s.user.id,s.access_token);}}catch(e){}setBooting(false);},[]);
+  async function loadProfile(uid,token){try{const p=await api(`profiles?id=eq.${uid}`,{token});const prof=p&&p[0];if(prof){setProfile(prof);if(prof.institution_id){const i=await api(`institutions?id=eq.${prof.institution_id}`,{token});if(i&&i[0]){setInst(i[0]);loadStats(i[0].id,token);}}}}catch(e){}}
+  async function loadStats(instId,token){try{const [pg,pt,inc]=await Promise.all([api(`programs?institution_id=eq.${instId}&select=id`,{token}),api(`participants?institution_id=eq.${instId}&select=id`,{token}),api(`incidents?institution_id=eq.${instId}&status=eq.open&select=id`,{token})]);setStats({programs:pg&&pg.length||0,participants:pt&&pt.length||0,pending:0,incidents:inc&&inc.length||0});}catch(e){}}
+  function onAuth(data){localStorage.setItem("shield_sess",JSON.stringify(data));setSession(data);loadProfile(data.user.id,data.access_token);}
+  function logout(){localStorage.removeItem("shield_sess");setSession(null);setProfile(null);setInst(null);}
+  if(booting)return <div style={{minHeight:"100vh",background:"#0D1F3C",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:24,color:"#fff"}}>SHIELD<span style={{color:"#C9A84C"}}>.</span></div>;
+  if(!session)return <Auth onAuth={onAuth}/>;
+  if(!inst)return <Setup userId={session.user.id} token={session.access_token} onDone={i=>{setInst(i);loadStats(i.id,session.access_token);}}/>;
+  const tok=session.access_token;
+  const nav=[{id:"dashboard",label:"Dashboard",sec:"Overview"},{id:"programs",label:"Programs",sec:"Manage"},{id:"participants",label:"Participants",sec:"Manage"},{id:"incidents",label:"Incidents",sec:"Compliance"}];
+  const secs=[...new Set(nav.map(n=>n.sec))];
+  return <div style={{fontFamily:"system-ui,sans-serif",minHeight:"100vh",background:"#EBF0F7"}}>
+    <div className="topbar">
+      <div className="brand">SHIELD<span>.</span></div>
+      <div className="topbar-right">
+        <span style={{fontSize:12,color:"rgba(255,255,255,0.7)"}}>{session.user.email}</span>
+        <span className="badge bb" style={{fontSize:10}}>{profile&&profile.role||"admin"}</span>
+        <button className="btn btn-gh" style={{fontSize:12,color:"rgba(255,255,255,0.8)",borderColor:"rgba(255,255,255,0.2)"}} onClick={logout}>Log Out</button>
+      </div>
+    </div>
+    <div className="layout">
+      <div className="sidebar">
+        {secs.map(sec=><div key={sec}><div className="sec-lbl">{sec}</div>{nav.filter(n=>n.sec===sec).map(n=><button key={n.id} className={`nav-btn ${page===n.id?"active":""}`} onClick={()=>setPage(n.id)}>{n.label}</button>)}</div>)}
+      </div>
+      <div className="main">
+        {page==="dashboard"&&<Dashboard inst={inst} stats={stats}/>}
+        {page==="programs"&&<Programs inst={inst} userId={session.user.id} token={tok}/>}
+        {page==="participants"&&<Participants inst={inst} token={tok}/>}
+        {page==="incidents"&&<Incidents inst={inst} userId={session.user.id} token={tok}/>}
+      </div>
+    </div>
+  </div>;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
